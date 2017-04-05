@@ -1,7 +1,9 @@
 package com.example.thinh.sampleclientst;
 
-import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.speech.tts.TextToSpeech;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -9,23 +11,29 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URI;
+import java.net.UnknownHostException;
+import java.util.Locale;
+import java.util.UUID;
 
 import edu.mica.speech.client.speechlistener.SpeechListener;
 import edu.mica.speech.client.speechprocessor.LiveSpeechProcessor;
-import edu.mica.speech.client.speechprocessor.SimpleSpeechProcessor;
 import edu.mica.speech.client.speechprocessor.SpeechProcessor;
+import edu.mica.speech.client.tools.audio.SimpleTextToSpeech;
 
 public class MainActivity extends AppCompatActivity implements SpeechListener{
     private TextView tvTest;
     private TextView tvResult;
     private Button btMic;
-    private SpeechProcessor speechProcessor;
+    private Button btSpeaker;
+    private SpeechProcessor speechProcessor = null;
     private boolean isStarted = false;
+    private SimpleTextToSpeech simpleTextToSpeech;
+
 
     private String TAG = "Event Speech";
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,25 +42,25 @@ public class MainActivity extends AppCompatActivity implements SpeechListener{
         tvTest = (TextView) findViewById(R.id.tvTest);
         tvResult = (TextView) findViewById(R.id.tvResult);
         btMic = (Button) findViewById(R.id.btMic);
-        try {
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        btSpeaker = (Button) findViewById(R.id.btSpeaker);
+        simpleTextToSpeech = new SimpleTextToSpeech(getApplicationContext());
+        btSpeaker.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                simpleTextToSpeech.stop();
+            }
+        });
         new AsyncTask<Void,Void,Exception>(){
 
             @Override
             protected Exception doInBackground(Void... params) {
                 try {
-                    setupSpeechProcessor();
+                   if(speechProcessor == null) setupSpeechProcessor();
 
                 } catch (IOException e){
                     e.printStackTrace();
 
                     return e;
-
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -74,7 +82,11 @@ public class MainActivity extends AppCompatActivity implements SpeechListener{
                     public void onClick(View v) {
                         if(!isStarted){
                             tvTest.setText("Start !");
-                            speechProcessor.startListenning();
+                            try {
+                                speechProcessor.startListenning();
+                            } catch (UnknownHostException e) {
+                                e.printStackTrace();
+                            }
                             isStarted = true;
                         } else {
                             try {
@@ -92,15 +104,25 @@ public class MainActivity extends AppCompatActivity implements SpeechListener{
             }
         }.execute();
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
+
     /*
-    * Setup properties must be done before run process!
-    * */
+        * Setup properties must be done before run process!
+        * */
     private void setupSpeechProcessor() throws Exception{
+
         speechProcessor = new LiveSpeechProcessor(this.getApplicationContext());
         //speechProcessor = new SimpleSpeechProcessor(this.getApplicationContext());
         speechProcessor.addListener(this);
-        speechProcessor.setHost("192.168.1.68");
+        //speechProcessor.setHost("172.16.76.216");
+        speechProcessor.setHost("172.16.75.74");
+        //speechProcessor.setHost("192.168.1.68");
     }
+
 
     @Override
     public void onReady() {
@@ -120,9 +142,14 @@ public class MainActivity extends AppCompatActivity implements SpeechListener{
         Log.i(TAG,status);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onResult(String result) {
+      //  simpleTextToSpeech = new SimpleTextToSpeech(this.getApplicationContext());
         tvResult.setText(result);
+        if(result != null ) {
+            simpleTextToSpeech.speakOut(result);
+        }
         Log.i(TAG,result);
     }
 
@@ -130,5 +157,11 @@ public class MainActivity extends AppCompatActivity implements SpeechListener{
     public void onProcess(String status) {
         tvTest.setText(status);
         Log.i(TAG,status);
+    }
+
+    @Override
+    protected void onDestroy() {
+        simpleTextToSpeech.stop();
+        super.onDestroy();
     }
 }

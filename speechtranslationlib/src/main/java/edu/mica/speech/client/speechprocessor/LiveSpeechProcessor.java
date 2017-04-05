@@ -46,6 +46,7 @@ public class LiveSpeechProcessor extends SpeechProcessor {
                         this.audioRecoder.setPause(false);
                         this.audioRecoder.setResume(true);
                     }*/
+
                     this.beginOfSpeech();
                     this.extractAllFeature();
                     this.endOfSpeech();
@@ -56,8 +57,9 @@ public class LiveSpeechProcessor extends SpeechProcessor {
 
                     this.audioRecoder.setPause(true);
                     this.processing("begin translating");
-                    this.translating();
+                    //this.translate();
                     //}
+
                     audioRecoder.stopRecording();
                 }
             } catch (Exception e){

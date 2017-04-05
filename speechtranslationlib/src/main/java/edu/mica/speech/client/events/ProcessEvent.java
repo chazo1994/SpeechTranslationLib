@@ -16,6 +16,6 @@ public class ProcessEvent extends SpeechEvent {
     }
     @Override
     protected void execute(SpeechListener listener) {
-        listener.onEndOfSpeech(status);
+        listener.onProcess(status);
     }
 }

@@ -99,9 +99,9 @@
 
    <component name="melFilterBank"
         type="edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank">
-        <property name="numberFilters" value="31"/>
+       <!-- <property name="numberFilters" value="31"/>
         <property name="minimumFrequency" value="200"/>
-        <property name="maximumFrequency" value="3500"/>
+        <property name="maximumFrequency" value="3500"/>-->
     </component>
     <component name="denoise"
         type="edu.cmu.sphinx.frontend.denoise.Denoise">
@@ -111,7 +111,7 @@
 
      <component name="dct"
         type="edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform2">
-        <property name="numberFilters" value="31"/>
+        <!--<property name="numberFilters" value="31"/>-->
       </component>
 
     <component name="lifter"

@@ -47,11 +47,12 @@ public abstract class SpeechProcessor {
     private List<float[]> allFeatures;
     private String result = "Translating Failed!";
     private String host = "172.16.76.216";
-    private String ip;
+    private int port = 9875;
     protected String configURL = null;
     private Context context;
     private String configName = "frontend.config.xml";
     private SpeechProcessorThread speechProcessorThread;
+
 
     private SenderThread senderThread;
     private ConfigurationManager cm;
@@ -72,6 +73,8 @@ public abstract class SpeechProcessor {
         tempDir = dir.getAbsolutePath();
         this.saveConfigFile();
 
+
+
     }
     public void addListener(SpeechListener target){
         synchronized (this.listeners){
@@ -87,7 +90,7 @@ public abstract class SpeechProcessor {
     }
 
 
-    public boolean startListenning(){
+    public boolean startListenning() throws UnknownHostException {
         if(this.speechProcessorThread == null){
             this.speechProcessorThread = new SpeechProcessor.SpeechProcessorThread();
             this.speechProcessorThread.start();
@@ -99,7 +102,7 @@ public abstract class SpeechProcessor {
     public abstract  boolean stopListenning()throws InterruptedException ;
 
     /**
-     * force stop all process
+     * force stop all thread
      * */
     public boolean stop(){
         if(this.speechProcessorThread == null) {
@@ -120,14 +123,17 @@ public abstract class SpeechProcessor {
         return true;
     }
 
-
+    /**
+     * this method to record speech and then dump it to features
+     */
     public abstract void excuteJob() ;
-    public void translating() throws UnknownHostException, InterruptedException {
+    /*public void translating() throws UnknownHostException, InterruptedException,Exception {
         this.senderThread = new SpeechProcessor.SenderThread(host);
         senderThread.start();
         senderThread.join();
         this.mHandler.post(new ResultEvent(listeners,result));
-    }
+    }*/
+
     /*
     * Save a config file from assets folder to a local directory on external disk
     * */
@@ -161,6 +167,8 @@ public abstract class SpeechProcessor {
         }
     }
 
+
+
     public void startExtractor(String frontEndName ) throws IOException {
         this.featureExtractor = new FeatureExtractor(cm,frontEndName);
     }
@@ -189,13 +197,16 @@ public abstract class SpeechProcessor {
         return this.mHandler.post(new EndOfSpeech(listeners,"end of speech"));
     }
     protected boolean processing(String status){
-        return this.mHandler.post(new EndOfSpeech(listeners,status));
+        return this.mHandler.post(new ProcessEvent(listeners,status));
     }
-
+    protected boolean result() {
+        return this.mHandler.post(new ResultEvent(listeners,result));
+    }
     private class SpeechProcessorThread extends Thread{
-        public SpeechProcessorThread() {
+        private ClientConnectionManager clientConnectionManager;
+        public SpeechProcessorThread() throws UnknownHostException {
             super("SpeechProcessorThread");
-
+            clientConnectionManager = new ClientConnectionManager(SpeechProcessor.this.host, SpeechProcessor.this.port);
         }
 
         @Override
@@ -203,6 +214,8 @@ public abstract class SpeechProcessor {
             super.run();
             try {
                 SpeechProcessor.this.excuteJob();
+                SpeechProcessor.this.result = clientConnectionManager.translate(allFeatures);
+                SpeechProcessor.this.result();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -254,13 +267,6 @@ public abstract class SpeechProcessor {
         this.host = host;
     }
 
-    public String getIp() {
-        return ip;
-    }
-
-    public void setIp(String ip) {
-        this.ip = ip;
-    }
 
     private class SenderThread extends Thread {
         ClientConnectionManager clientConnectionManager;

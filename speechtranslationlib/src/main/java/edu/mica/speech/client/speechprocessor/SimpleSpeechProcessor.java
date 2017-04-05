@@ -29,7 +29,6 @@ public class SimpleSpeechProcessor extends SpeechProcessor {
         try {
             if(configURL == null) {
                 throw new Exception("Error: load configuration failed!");
-                //excuteJobContinuous(cm);
             }
             this.startExtractor("SimpleFrontEnd");
            if(simpleRecorder == null) {
@@ -41,9 +40,7 @@ public class SimpleSpeechProcessor extends SpeechProcessor {
                this.processing("Begin extraction");
                this.extractAllFeature(tempAudioFile);
                this.processing("begin translating");
-               this.translating();
-               //simpleRecorder.interrupt();
-               //simpleRecorder = null;
+
            }
 
         } catch (Exception e){
