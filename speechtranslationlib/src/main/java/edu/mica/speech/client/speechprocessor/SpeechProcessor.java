@@ -5,11 +5,13 @@ import android.net.Uri;
 import com.example.speechtranslationlib.R;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -21,11 +23,8 @@ import android.content.Context;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
-import edu.cmu.sphinx.frontend.FrontEnd;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
-import edu.mica.speech.client.configure.Configure;
 import edu.mica.speech.client.controller.ClientConnectionManager;
 import edu.mica.speech.client.events.BeginOfSpeech;
 import edu.mica.speech.client.events.EndOfSpeech;
@@ -127,16 +126,10 @@ public abstract class SpeechProcessor {
      * this method to record speech and then dump it to features
      */
     public abstract void excuteJob() ;
-    /*public void translating() throws UnknownHostException, InterruptedException,Exception {
-        this.senderThread = new SpeechProcessor.SenderThread(host);
-        senderThread.start();
-        senderThread.join();
-        this.mHandler.post(new ResultEvent(listeners,result));
-    }*/
 
-    /*
+    /**
     * Save a config file from assets folder to a local directory on external disk
-    * */
+    */
     private void saveConfigFile() throws Exception {
         if(context != null) {
             InputStream in = context.getAssets().open(configName);
@@ -173,17 +166,24 @@ public abstract class SpeechProcessor {
         this.featureExtractor = new FeatureExtractor(cm,frontEndName);
     }
 
-    public void extractAllFeature() throws Exception {
+
+    public void extractAllLiveFeature() throws Exception {
         if(this.featureExtractor == null) {
             throw new Exception("Extractor Null: start Extractor before getFeature!");
         }
-        this.allFeatures = this.featureExtractor.processSpeech();
+        this.allFeatures = this.featureExtractor.processLiveSpeech();
     }
     public void extractAllFeature(String inputAudioFile) throws Exception {
         if(this.featureExtractor == null) {
             throw new Exception("Extractor Null: start Extractor before getFeature!");
         }
         this.allFeatures = this.featureExtractor.processSpeech(inputAudioFile);
+    }
+    public void extractAllFeature() throws Exception {
+        if(this.featureExtractor == null) {
+            throw new Exception("Extractor Null: start Extractor before getFeature!");
+        }
+        this.allFeatures = this.featureExtractor.processSpeech();
     }
 
     protected boolean ready(){
@@ -202,6 +202,7 @@ public abstract class SpeechProcessor {
     protected boolean result() {
         return this.mHandler.post(new ResultEvent(listeners,result));
     }
+
     private class SpeechProcessorThread extends Thread{
         private ClientConnectionManager clientConnectionManager;
         public SpeechProcessorThread() throws UnknownHostException {
@@ -267,6 +268,13 @@ public abstract class SpeechProcessor {
         this.host = host;
     }
 
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
 
     private class SenderThread extends Thread {
         ClientConnectionManager clientConnectionManager;

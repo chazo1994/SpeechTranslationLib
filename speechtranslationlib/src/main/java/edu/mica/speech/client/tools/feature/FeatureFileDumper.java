@@ -121,17 +121,49 @@ public class FeatureFileDumper {
      */
     public void processFile(String inputAudioFile) throws FileNotFoundException {
         audioSource = (StreamDataSource) cm.lookup("dataSource");
-        audioSource .setInputStream(new FileInputStream(inputAudioFile));
+        audioSource.setInputStream(new BufferedInputStream(new FileInputStream(inputAudioFile)));
         allFeatures = new LinkedList<float[]>();
         getAllFeatures();
         logger.info("Frames: " + allFeatures.size());
     }
+    public void getAllFeatures() {
+        /*
+         * Run through all the data and produce feature.
+         */
+        try {
+            assert (allFeatures != null);
+            Data feature = frontEnd.getData();
+            while (!(feature instanceof DataEndSignal)) {
+                if (feature instanceof DoubleData) {
+                    double[] featureData = ((DoubleData) feature).getValues();
+                    if (featureLength < 0) {
+                        featureLength = featureData.length;
+                        logger.info("Feature length: " + featureLength);
+                    }
+                    float[] convertedData = new float[featureData.length];
+                    for (int i = 0; i < featureData.length; i++) {
+                        convertedData[i] = (float) featureData[i];
+                    }
+                    allFeatures.add(convertedData);
+                } else if (feature instanceof FloatData) {
+                    float[] featureData = ((FloatData) feature).getValues();
+                    if (featureLength < 0) {
+                        featureLength = featureData.length;
+                        logger.info("Feature length: " + featureLength);
+                    }
+                    allFeatures.add(featureData);
+                }
+                feature = frontEnd.getData();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
-     * Retrieve all Features from the frontend, and cache all those with actual
-     * feature data.
+     * Retrieve all Features from speech signal, auto detect end of speech and cache all those with actual feature data.
      */
-    public void getAllFeatures() {
+    public void getAllLiveFeatures() {
         /*
          * Run through all the data and produce feature.
          */
@@ -139,20 +171,10 @@ public class FeatureFileDumper {
         try {
             assert (allFeatures != null);
             Data feature = frontEnd.getData();
-            if(feature instanceof  DataStartSignal) {
-                speechStatus = SpeechStatus.BeginOfSignal;
-            }
+
 
             while (!(feature instanceof DataEndSignal) && !(feature instanceof SpeechEndSignal) && !(feature == null) ) {
 
-
-                if(feature instanceof SpeechStartSignal) {
-                    speechStatus = SpeechStatus.BeginOfSpeech;
-                } else if(feature != null) {
-                    speechStatus = SpeechStatus.InSpeech;
-                } else {
-                    speechStatus = SpeechStatus.OutOfSpeech;
-                }
 
                 if (feature instanceof DoubleData) {
                     double[] featureData = ((DoubleData) feature).getValues();
@@ -177,11 +199,7 @@ public class FeatureFileDumper {
                 }
                 feature = frontEnd.getData();
             }
-            if(feature instanceof SpeechEndSignal) {
-                speechStatus = SpeechStatus.EndOfSpeech;
-            } else if(feature instanceof DataEndSignal) {
-                speechStatus = SpeechStatus.EndOfSignal;
-            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }

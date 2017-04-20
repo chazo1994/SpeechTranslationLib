@@ -49,7 +49,7 @@ public class SimpleTextToSpeech {
             textToSpeech.stop();
         }
     }
-    private void setLanguage(Locale language){
+    public void setLanguage(Locale language){
         if(language == null) {
             this.ready = false;
             Toast.makeText(this.context,"language not set",Toast.LENGTH_SHORT).show();

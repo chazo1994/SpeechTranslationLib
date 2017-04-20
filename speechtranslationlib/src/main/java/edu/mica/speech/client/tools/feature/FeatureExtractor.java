@@ -1,7 +1,5 @@
 package edu.mica.speech.client.tools.feature;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,6 +20,11 @@ public class FeatureExtractor extends FeatureFileDumper{
 	public List<float[]> processSpeech(String inputAudioFile) throws Exception {
 		allFeatures = new LinkedList<float[]>();
 		processFile(inputAudioFile);
+		return  allFeatures;
+	}
+	public List<float[]> processLiveSpeech() throws Exception {
+		allFeatures = new LinkedList<float[]>();
+		getAllLiveFeatures();
 		return  allFeatures;
 	}
 

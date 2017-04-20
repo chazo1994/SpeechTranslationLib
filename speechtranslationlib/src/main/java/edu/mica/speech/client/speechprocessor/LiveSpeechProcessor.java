@@ -41,24 +41,11 @@ public class LiveSpeechProcessor extends SpeechProcessor {
                         this.audioRecoder.stopRecording();
                         throw  new Exception("Add listener before start recording!");
                     }
-               /* while(true){
-                    if(this.audioRecoder.isPause()){
-                        this.audioRecoder.setPause(false);
-                        this.audioRecoder.setResume(true);
-                    }*/
-
+                    this.processing("begin of speech");
                     this.beginOfSpeech();
-                    this.extractAllFeature();
+                    this.extractAllLiveFeature();
                     this.endOfSpeech();
-                    String tempfile = this.getTempDir() + "/livetemp.raw";
-                    //audioRecoder.getCurrentUtterance().save(tempfile);
-                    //WaveWriter.copyWaveFile(tempfile, AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT,16000);
-                    //target.onBeginOfSpeech();
-
-                    this.audioRecoder.setPause(true);
-                    this.processing("begin translating");
-                    //this.translate();
-                    //}
+                    this.processing("end of speech");
 
                     audioRecoder.stopRecording();
                 }
