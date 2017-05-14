@@ -240,6 +240,7 @@ public class AudioRecoder extends BaseDataProcessor {
     public boolean isUtteranceEndReached() {
         return utteranceEndReached;
     }
+
     /**
      * Starts recording audio. This method will return only when a START event is received, meaning that this Microphone
      * has started capturing audio.
@@ -267,16 +268,16 @@ public class AudioRecoder extends BaseDataProcessor {
      * Stops recording audio. This method does not return until recording has been stopped and all data has been read
      *
      */
-    public synchronized void stopRecording() {
+    public synchronized void stopRecording() throws InterruptedException {
         if (audioRecord != null) {
             if (recorder != null) {
                 recorder.stopRecording();
+                recorder.interrupt();
+                recorder.join();
                 recorder = null;
             }
             recording = false;
         }
-
-
     }
 
     class AudioRecordingThread extends Thread {

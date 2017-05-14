@@ -51,12 +51,10 @@ import edu.cmu.sphinx.frontend.endpoint.SpeechEndSignal;
 import edu.cmu.sphinx.frontend.endpoint.SpeechStartSignal;
 import edu.cmu.sphinx.frontend.util.StreamDataSource;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
-import edu.cmu.sphinx.util.props.PropertyException;
-import edu.mica.speech.client.speechlistener.SpeechStatus;
+import edu.mica.speech.client.Utilities.SpeechStatus;
 
 import java.io.*;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -162,40 +160,43 @@ public class FeatureFileDumper {
 
     /**
      * Retrieve all Features from speech signal, auto detect end of speech and cache all those with actual feature data.
+     * This method skip all data after reached end of speech
      */
     public void getAllLiveFeatures() {
         /*
          * Run through all the data and produce feature.
          */
-
         try {
             assert (allFeatures != null);
             Data feature = frontEnd.getData();
-
-
-            while (!(feature instanceof DataEndSignal) && !(feature instanceof SpeechEndSignal) && !(feature == null) ) {
-
-
-                if (feature instanceof DoubleData) {
-                    double[] featureData = ((DoubleData) feature).getValues();
-                    if (featureLength < 0) {
-                        featureLength = featureData.length;
-                        Log.i("Feature length","Feature length:"  + featureLength);
+            while (true) {
+                //skip all data after reached SpeechEndSignal
+                if(feature instanceof  SpeechStartSignal){
+                    while (!(feature instanceof SpeechEndSignal) && !(feature instanceof DataEndSignal) && (feature != null)){
+                        if (feature instanceof DoubleData) {
+                            double[] featureData = ((DoubleData) feature).getValues();
+                            if (featureLength < 0) {
+                                featureLength = featureData.length;
+                                Log.i("Feature length","Feature length:"  + featureLength);
+                            }
+                            float[] convertedData = new float[featureData.length];
+                            for (int i = 0; i < featureData.length; i++) {
+                                convertedData[i] = (float) featureData[i];
+                            }
+                            allFeatures.add(convertedData);
+                            Log.d("allFeatures", Arrays.toString(featureData));
+                        } else if (feature instanceof FloatData) {
+                            float[] featureData = ((FloatData) feature).getValues();
+                            if (featureLength < 0) {
+                                featureLength = featureData.length;
+                                Log.i("Feature length","Feature length:"  + featureLength);
+                            }
+                            allFeatures.add(featureData);
+                            Log.d("allFeatures", Arrays.toString(featureData));
+                        }
+                        feature = frontEnd.getData();
                     }
-                    float[] convertedData = new float[featureData.length];
-                    for (int i = 0; i < featureData.length; i++) {
-                        convertedData[i] = (float) featureData[i];
-                    }
-                    allFeatures.add(convertedData);
-                    Log.d("allFeatures", Arrays.toString(featureData));
-                } else if (feature instanceof FloatData) {
-                    float[] featureData = ((FloatData) feature).getValues();
-                    if (featureLength < 0) {
-                        featureLength = featureData.length;
-                        Log.i("Feature length","Feature length:"  + featureLength);
-                    }
-                    allFeatures.add(featureData);
-                    Log.d("allFeatures", Arrays.toString(featureData));
+                    break;
                 }
                 feature = frontEnd.getData();
             }
@@ -261,77 +262,6 @@ public class FeatureFileDumper {
 
         ps.close();
     }
-
-//    public static void main(String[] argv) {
-//
-//        String configFile = null;
-//        String frontEndName = null;
-//        String inputFile = null;
-//        String inputCtl = null;
-//        String outputFile = null;
-//        String format = "binary";
-//
-//        for (int i = 0; i < argv.length; i++) {
-//            if (argv[i].equals("-c")) {
-//                configFile = argv[++i];
-//            }
-//            if (argv[i].equals("-name")) {
-//                frontEndName = argv[++i];
-//            }
-//            if (argv[i].equals("-i")) {
-//                inputFile = argv[++i];
-//            }
-//            if (argv[i].equals("-ctl")) {
-//                inputCtl = argv[++i];
-//            }
-//            if (argv[i].equals("-o")) {
-//                outputFile = argv[++i];
-//            }
-//            if (argv[i].equals("-format")) {
-//                format = argv[++i];
-//            }
-//        }
-//
-//        if (frontEndName == null || (inputFile == null && inputCtl == null)
-//                || outputFile == null || format == null) {
-//            System.out
-//                    .println("Usage: FeatureFileDumper "
-//                            + "[ -config configFile ] -name frontendName "
-//                            + "< -i input File -o outputFile | -ctl inputFile -i inputFolder -o outputFolder >\n"
-//                            + "Possible frontends are: cepstraFrontEnd, spectraFrontEnd, plpFrontEnd");
-//            System.exit(1);
-//        }
-//
-//        logger.info("Input file: " + inputFile);
-//        logger.info("Output file: " + outputFile);
-//        logger.info("Format: " + format);
-//
-//        try {
-//            URL url;
-//            if (configFile != null) {
-//                url = new File(configFile).toURI().toURL();
-//            } else {
-//                url = FeatureFileDumper.class
-//                        .getResource("frontend.config.xml");
-//            }
-//            ConfigurationManager cm = new ConfigurationManager(url);
-//
-//            if(cm.lookup(frontEndName) == null) {
-//            	throw new RuntimeException("No such frontend: " + frontEndName);
-//            }
-//
-//            FeatureFileDumper dumper = new FeatureFileDumper(cm, frontEndName);
-//
-//            if (inputCtl == null)
-//                dumper.processFile(inputFile, outputFile, format);
-//            else
-//                dumper.processCtl(inputCtl, inputFile, outputFile, format);
-//        } catch (IOException ioe) {
-//            System.err.println("I/O Error " + ioe);
-//        } catch (PropertyException p) {
-//            System.err.println("Bad configuration " + p);
-//        }
-//    }
 
     private void processFile(String inputFile, String outputFile, String format)
             throws MalformedURLException, IOException {

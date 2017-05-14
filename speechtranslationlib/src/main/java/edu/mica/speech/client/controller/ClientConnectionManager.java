@@ -4,16 +4,22 @@ package edu.mica.speech.client.controller;
  * Created by thinh on 21/03/2017.
  */
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.File;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.List;
+
+import edu.mica.speech.client.speechprocessor.SpeechProcessor;
 
 public class ClientConnectionManager {
     private final String micaServer = "192.168.75.74";
@@ -55,8 +61,9 @@ public class ClientConnectionManager {
         return sever;
     }
 
-    public void setSever(String sever) {
+    public void setSever(String sever) throws UnknownHostException {
         this.sever = sever;
+        setIp();
     }
 
     public InetAddress getIp() {
@@ -66,9 +73,77 @@ public class ClientConnectionManager {
     public void setIp(InetAddress ip) {
         this.ip = ip;
     }
+    public HashMap<String,String> translate(String tempFile) throws IOException {
+        HashMap<String,String> result = new HashMap<String, String>();
+        String resultRecognition = "fail";
+        String resultTranslation = "fail";
+        File soundefile = new File(tempFile);
+        if (isSever) {
 
-    public String translate(List<float[]> allFeatures) throws IOException {
-        String result = "fail";
+            BufferedReader bufferedReader = null;
+            try {
+                byte [] mybytearray  = new byte [(int)soundefile.length()];
+                clientsocket = new Socket(ip, port);
+                FileInputStream fis = new FileInputStream(soundefile);
+                BufferedInputStream bis = new BufferedInputStream(fis);
+                bis.read(mybytearray,0,mybytearray.length);
+                // object in used to received data from sever
+                in = new DataInputStream(clientsocket.getInputStream());
+                // object out used to send data to sever
+                out = new DataOutputStream(clientsocket.getOutputStream());
+                bufferedReader = new BufferedReader(new InputStreamReader(in));
+
+                //while ((count = fis.read(buffer)) != -1)
+                //out.writeInt((int)soundefile.length());
+                out.writeInt(mybytearray.length);
+                    out.write(mybytearray,0,mybytearray.length);
+                out.flush();
+                //out.writeUTF("");
+                // in.reString received =adUTF();
+                resultRecognition = in.readLine();
+                resultTranslation = in.readLine();
+
+                System.out.println("Received: " + resultRecognition);
+                bufferedReader.close();
+                fis.close();
+                in.close();
+                out.close();
+                clientsocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                try {
+                    throw  e;
+
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            } finally {
+                try {
+                    result.put(SpeechProcessor.KEY_RECOGNITION,resultRecognition);
+                    result.put(SpeechProcessor.KEY_TRANSATION,resultTranslation);
+
+                    bufferedReader.close();
+                    in.close();
+                    out.close();
+                    clientsocket.close();
+
+                    return result;
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+            }
+        } else {
+            System.out.println("failed to resolve ip or host");
+        }
+        return null;
+    }
+
+    public HashMap<String,String> translate(List<float[]> allFeatures) throws IOException {
+        HashMap<String,String> result = new HashMap<String, String>();
+        String resultRecognition = "fail";
+        String resultTranslation = "fail";
         if (isSever) {
 
             BufferedReader bufferedReader;
@@ -79,7 +154,6 @@ public class ClientConnectionManager {
                 in = new DataInputStream(clientsocket.getInputStream());
                 // object out used to send data to sever
                 out = new DataOutputStream(clientsocket.getOutputStream());
-
                 bufferedReader = new BufferedReader(new InputStreamReader(in));
                 printWriter = new PrintWriter(out,true);
                 int numberFeatureLine = allFeatures.size();
@@ -95,8 +169,12 @@ public class ClientConnectionManager {
                 printWriter.println("end");
                 //out.writeUTF("");
                 //String received = in.readUTF();
-                result = bufferedReader.readLine();
-                System.out.println("Received: " + result);
+                resultRecognition = bufferedReader.readLine();
+                resultTranslation = bufferedReader.readLine();
+
+                result.put(SpeechProcessor.KEY_RECOGNITION,resultRecognition);
+                result.put(SpeechProcessor.KEY_TRANSATION,resultTranslation);
+                System.out.println("Received: " + resultRecognition);
                 bufferedReader.close();
                 printWriter.close();
 
@@ -129,14 +207,7 @@ public class ClientConnectionManager {
         return null;
     }
 
-    private void setIp() {
-        try {
-            ip = InetAddress.getByName(sever);
-        } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            isSever = false;
-            System.out.println("failed to resolve ip or host");
-            e.printStackTrace();
-        }
+    private void setIp() throws UnknownHostException{
+        ip = InetAddress.getByName(sever);
     }
 }

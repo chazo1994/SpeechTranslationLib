@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="Configuration"
+        android:key="pref_key_Config">
+        <EditTextPreference
+            android:key="IpAddress"
+            android:title="Ip Address"
+            android:summary="Enter Address of Your sever"
+            android:defaultValue="@string/ip"/>
+        <EditTextPreference
+            android:key="enviPort"
+            android:title="Sever E-V port"
+            android:summary="Enter port of Your sever that's listening for translate English vietnamese"
+            android:defaultValue="@string/enviPort"/>
+
+        <EditTextPreference
+            android:key="vienPort"
+            android:title="Sever V-E port"
+            android:summary="Enter port of Your sever that's listening for translate Vietnamese English"
+            android:defaultValue="@string/vienPort"/>
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Speech Processor"
+        android:key="pref_key_SpeechProcessor">
+        <CheckBoxPreference
+            android:key="pref_type_processor"
+            android:title="Simple Speech Processor"
+            android:summary="Enable Simple Speech Processor"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+
+
+
+</PreferenceScreen>

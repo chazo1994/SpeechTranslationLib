@@ -28,7 +28,9 @@ public class FeatureExtractor extends FeatureFileDumper{
 		return  allFeatures;
 	}
 
-	
+	public void resetExtractor(){
+
+	}
 	public List<float[]> getVoiceFeature(){
 		return allFeatures;
 	}

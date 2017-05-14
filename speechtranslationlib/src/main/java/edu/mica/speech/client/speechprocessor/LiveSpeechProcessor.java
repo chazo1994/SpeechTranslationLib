@@ -3,6 +3,8 @@ package edu.mica.speech.client.speechprocessor;
 import android.content.Context;
 import android.media.AudioFormat;
 import android.util.Log;
+
+import edu.mica.speech.client.Utilities.ProcessStatus;
 import edu.mica.speech.client.tools.audio.AudioRecoder;
 import edu.mica.speech.client.tools.audio.WaveWriter;
 
@@ -35,19 +37,18 @@ public class LiveSpeechProcessor extends SpeechProcessor {
                 }
                 this.startExtractor("LiveFrontEnd");
                 this.audioRecoder = (AudioRecoder) this.getConfigurationManager().lookup("microphone");
+                audioRecoder.clear();
                 this.ready();
                 if(audioRecoder.startRecording()){
                     if(this.listeners == null || this.listeners.isEmpty()) {
                         this.audioRecoder.stopRecording();
                         throw  new Exception("Add listener before start recording!");
                     }
-                    this.processing("begin of speech");
                     this.beginOfSpeech();
+                    this.processing(ProcessStatus.Recording);
                     this.extractAllLiveFeature();
-                    this.endOfSpeech();
-                    this.processing("end of speech");
-
                     audioRecoder.stopRecording();
+                    this.endOfSpeech();
                 }
             } catch (Exception e){
                 Log.e("SpeechProcessor", e.getMessage());

@@ -4,18 +4,25 @@ import android.net.Uri;
 
 import com.example.speechtranslationlib.R;
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.net.URI;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.LogRecord;
 
@@ -25,6 +32,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import edu.cmu.sphinx.util.props.ConfigurationManager;
+import edu.mica.speech.client.Utilities.ProcessStatus;
 import edu.mica.speech.client.controller.ClientConnectionManager;
 import edu.mica.speech.client.events.BeginOfSpeech;
 import edu.mica.speech.client.events.EndOfSpeech;
@@ -32,6 +40,7 @@ import edu.mica.speech.client.events.ProcessEvent;
 import edu.mica.speech.client.events.Ready;
 import edu.mica.speech.client.events.ResultEvent;
 import edu.mica.speech.client.speechlistener.SpeechListener;
+import edu.mica.speech.client.tools.audio.SimpleRecorder;
 import edu.mica.speech.client.tools.feature.FeatureExtractor;
 
 /**
@@ -44,7 +53,7 @@ public abstract class SpeechProcessor {
     protected FeatureExtractor featureExtractor = null;
     private String tempDir;
     private List<float[]> allFeatures;
-    private String result = "Translating Failed!";
+    private HashMap<String,String> result = new HashMap<String, String>();
     private String host = "172.16.76.216";
     private int port = 9875;
     protected String configURL = null;
@@ -52,9 +61,13 @@ public abstract class SpeechProcessor {
     private String configName = "frontend.config.xml";
     private SpeechProcessorThread speechProcessorThread;
 
+    public static final String KEY_RECOGNITION = "recognition";
+    public static final String KEY_TRANSATION = "translation";
+
 
     private SenderThread senderThread;
     private ConfigurationManager cm;
+    private int numbertest = 0;
     // Initial a handler object to comunicate with UI
     private final Handler mHandler = new Handler(Looper.getMainLooper()) ;
 
@@ -89,7 +102,8 @@ public abstract class SpeechProcessor {
     }
 
 
-    public boolean startListenning() throws UnknownHostException {
+    public boolean startListenning() throws UnknownHostException, Exception {
+        numbertest++;
         if(this.speechProcessorThread == null){
             this.speechProcessorThread = new SpeechProcessor.SpeechProcessorThread();
             this.speechProcessorThread.start();
@@ -97,22 +111,31 @@ public abstract class SpeechProcessor {
         }
         return false;
     }
+    public boolean isAliveThread(){
+        return speechProcessorThread.isAlive();
+    }
 
+    public String threadState(){
+        return speechProcessorThread.getState().toString();
+    }
     public abstract  boolean stopListenning()throws InterruptedException ;
 
     /**
      * force stop all thread
      * */
-    public boolean stop(){
+    public boolean stop() throws Exception{
         if(this.speechProcessorThread == null) {
             return false;
         }
-        if(this.senderThread != null){
-            this.senderThread.interrupt();
-        }
-        this.speechProcessorThread.interrupt();
+
         try {
             this.stopListenning();
+            // sender threader haven't used yet.
+            /*if(this.senderThread != null){
+                this.senderThread.interrupt();
+                this.senderThread.join();
+            }*/
+            this.speechProcessorThread.interrupt();
             this.speechProcessorThread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -196,7 +219,7 @@ public abstract class SpeechProcessor {
     protected boolean endOfSpeech() {
         return this.mHandler.post(new EndOfSpeech(listeners,"end of speech"));
     }
-    protected boolean processing(String status){
+    protected boolean processing(ProcessStatus status){
         return this.mHandler.post(new ProcessEvent(listeners,status));
     }
     protected boolean result() {
@@ -215,14 +238,25 @@ public abstract class SpeechProcessor {
             super.run();
             try {
                 SpeechProcessor.this.excuteJob();
+                SpeechProcessor.this.processing(ProcessStatus.Translating);
                 SpeechProcessor.this.result = clientConnectionManager.translate(allFeatures);
+                //SpeechProcessor.this.result = clientConnectionManager.translate(SpeechProcessor.this.tempAudioFile);
                 SpeechProcessor.this.result();
+                SpeechProcessor.this.processing(ProcessStatus.Done);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-    }
 
+        public void setHost(String host) throws UnknownHostException{
+            clientConnectionManager.setSever(host);
+        }
+        public void setPort(int port){
+            clientConnectionManager.setPort(port);
+        }
+
+    }
+    public String tempAudioFile = "";
     public ConfigurationManager getConfigurationManager() {
         return cm;
     }
@@ -248,7 +282,7 @@ public abstract class SpeechProcessor {
         //mHandler = new Handler(context.getMainLooper());
     }
 
-    public String getResult() {
+    public HashMap<String, String> getResult() {
         return result;
     }
 
@@ -264,17 +298,22 @@ public abstract class SpeechProcessor {
         return host;
     }
 
-    public void setHost(String host) {
+    public void setHost(String host) throws UnknownHostException {
         this.host = host;
+        if(this.speechProcessorThread != null){
+            this.speechProcessorThread.setHost(host);
+        }
     }
-
+    public void setPort(int port){
+        this.port = port;
+        if(this.speechProcessorThread != null){
+            this.speechProcessorThread.setPort(port);
+        }
+    }
     public int getPort() {
         return port;
     }
 
-    public void setPort(int port) {
-        this.port = port;
-    }
 
     private class SenderThread extends Thread {
         ClientConnectionManager clientConnectionManager;
@@ -300,6 +339,5 @@ public abstract class SpeechProcessor {
                 e.printStackTrace();
             }
         }
-
     }
 }

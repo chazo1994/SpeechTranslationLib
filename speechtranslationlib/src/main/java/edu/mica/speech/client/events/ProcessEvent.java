@@ -2,6 +2,7 @@ package edu.mica.speech.client.events;
 
 import java.util.ArrayList;
 
+import edu.mica.speech.client.Utilities.ProcessStatus;
 import edu.mica.speech.client.speechlistener.SpeechListener;
 
 /**
@@ -9,8 +10,8 @@ import edu.mica.speech.client.speechlistener.SpeechListener;
  */
 
 public class ProcessEvent extends SpeechEvent {
-    private String status;
-    public ProcessEvent(ArrayList<SpeechListener> listeners, String status){
+    private ProcessStatus status;
+    public ProcessEvent(ArrayList<SpeechListener> listeners, ProcessStatus status){
         super(listeners);
         this.status = status;
     }

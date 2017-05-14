@@ -1,4 +1,4 @@
-package edu.mica.speech.client.speechlistener;
+package edu.mica.speech.client.Utilities;
 
 /**
  * Created by thinh on 22/03/2017.

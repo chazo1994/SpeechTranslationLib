@@ -1,6 +1,7 @@
 package edu.mica.speech.client.events;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import edu.mica.speech.client.speechlistener.SpeechListener;
 
@@ -9,8 +10,8 @@ import edu.mica.speech.client.speechlistener.SpeechListener;
  */
 
 public class ResultEvent extends SpeechEvent {
-    private String result;
-    public ResultEvent(ArrayList<SpeechListener> listeners, String result){
+    private HashMap<String,String> result;
+    public ResultEvent(ArrayList<SpeechListener> listeners, HashMap<String,String> result){
         super(listeners);
         this.result = result;
     }
